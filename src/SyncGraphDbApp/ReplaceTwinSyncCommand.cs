@@ -35,8 +35,7 @@
             Vertex vTwin = await this.GetVertexByIdAsync(graphTwinId);
             if (vTwin == null)
             {
-                Console.WriteLine("Vertex does not exist. Execute Add command ...");
-                await this.AddTwinAsync(this.hubName, this.twinId, this.jTwin);
+                Console.WriteLine("Thermostat does not exist in the graph.");
                 return;
             }
 

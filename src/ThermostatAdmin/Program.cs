@@ -18,14 +18,97 @@
             Console.ReadKey();
         }
 
+        // usage: 
+        // add <deviceId>
+        // location <deviceId> <building> <floor> <room>
+        // temperature <deviceId> <temperature>
+        // delete <deviceId>
+        static bool ParseArguments(string[] args, out string action, out string deviceId, out string building, out string floor, out string room, out string temperature)
+        {
+            action = deviceId = building = floor = room = temperature = null;
+            if (args.Length < 2)
+            {
+                PrintHelp("Wrong number of arguments.");
+                return false;
+            }
+
+            action = args[0];
+            switch (action)
+            {
+                case "add":
+                    if (args.Length != 2)
+                    {
+                        PrintHelp("Wrong number of arguments.");
+                        return false;
+                    }
+                    deviceId = args[1];
+                    break;
+                case "location":
+                    if (args.Length != 5)
+                    {
+                        PrintHelp("Wrong number of arguments.");
+                        return false;
+                    }
+                    deviceId = args[1];
+                    building = args[2];
+                    floor = args[3];
+                    room = args[4];
+                    break;
+                case "temperature":
+                    if (args.Length != 3)
+                    {
+                        PrintHelp("Wrong number of arguments.");
+                        return false;
+                    }
+                    deviceId = args[1];
+                    temperature = args[2];
+                    break;
+                case "delete":
+                    if (args.Length != 2)
+                    {
+                        PrintHelp("Wrong number of arguments.");
+                        return false;
+                    }
+                    deviceId = args[1];
+                    break;
+                default:
+                    PrintHelp($"Unrecognized action '{action}'.");
+                    return false;
+            }
+
+            return true;
+        }
+
+        static void PrintHelp(string message)
+        {
+            Console.WriteLine(message);
+            Console.WriteLine("usage: ThermostatAdmin add <deviceId>");
+            Console.WriteLine("                       location <deviceId> <building> <floor> <room>");
+            Console.WriteLine("                       temperature <temperature>");
+            Console.WriteLine("                       delete <deviceId>");
+            Console.WriteLine();
+            Console.WriteLine("deviceId    - id of a thermostat to add/update/delete");
+            Console.WriteLine("building    - building to update a thermostat location");
+            Console.WriteLine("floor       - floor to update a thermostat location");
+            Console.WriteLine("room        - room to update a thermostat location");
+            Console.WriteLine("temperature - set desired temperature of a thermostat");
+        }
+
         static async Task MainAsync(string[] args)
         {
+            string action, deviceId, building, floor, room, temperature;
+
+            if (!ParseArguments(args, out action, out deviceId, out building, out floor, out room, out temperature))
+            {
+                return;
+            }
+
             try
             {
                 string iotHubConnectionString = ConfigurationManager.AppSettings["IotHubConnectionString"];
                 using (RegistryManager registryManager = RegistryManager.CreateFromConnectionString(iotHubConnectionString))
                 {
-                    await new Program().RunSampleAsync(registryManager);
+                    await new Program().RunSampleAsync(registryManager, action, deviceId, building, floor, room, temperature);
                 }
             }
             catch (IotHubException ex)
@@ -38,71 +121,94 @@
             }
         }
 
-        async Task RunSampleAsync(RegistryManager registryManager)
+        Task RunSampleAsync(RegistryManager registryManager, string action, string deviceId, string building, string floor, string room, string temperature)
         {
-            string deviceId = ConfigurationManager.AppSettings["DeviceId"];
+            switch (action)
+            {
+                case "add":
+                    return AddThermostatAsync(registryManager, deviceId);
+                case "location":
+                    return UpdateLocationAsync(registryManager, deviceId, building, floor, room);
+                case "temperature":
+                    return SetDesiredTemperatureAsync(registryManager, deviceId, temperature);
+                case "delete":
+                    return DeleteThermostatAsync(registryManager, deviceId);
+                default:
+                    throw new NotSupportedException($"Action {action} no supported");
+            }
+        }
+
+        async Task AddThermostatAsync(RegistryManager registryManager, string deviceId)
+        {
             var device = new Device(deviceId);
 
-            try
+            Console.WriteLine($"Add thermostat '{deviceId}' ...");
+            await registryManager.AddDeviceAsync(device);
+            Console.WriteLine("Thermostat added");
+
+            Twin thermostat = await registryManager.GetTwinAsync(deviceId);
+            PrintTwin(thermostat);
+        }
+
+        async Task UpdateLocationAsync(RegistryManager registryManager, string deviceId, string building, string floor, string room)
+        {
+            Console.WriteLine($"Get thermostat '{deviceId}' ...");
+            Twin thermostat = await registryManager.GetTwinAsync(deviceId);
+            if (thermostat == null)
             {
-                Console.WriteLine($"Add device '{deviceId}' ...");
-                await registryManager.AddDeviceAsync(device);
-                Console.WriteLine("Device added");
-            }
-            catch (IotHubException ex) when (ex.Code == ErrorCode.DeviceAlreadyExists)
-            {
-                Console.WriteLine("Device already exists. Use existing device ...");
-                device = await registryManager.GetDeviceAsync(deviceId);
+                Console.WriteLine($"Thermostat {deviceId} not found. Nothing to update.");
+                return;
             }
 
-            // set initial device location
+            Console.WriteLine();
+            Console.WriteLine("Update location:");
+
             var twin = new Twin(deviceId);
             twin.Tags["location"] = new TwinCollection();
-            twin.Tags["location"]["building"] = "43";
-            twin.Tags["location"]["floor"] = "1";
-            twin.Tags["location"]["room"] = "1R";
+            twin.Tags["location"]["building"] = building;
+            twin.Tags["location"]["floor"] = floor;
+            twin.Tags["location"]["room"] = room;
 
-            Console.WriteLine();
-            Console.WriteLine("Update device location:");
             Console.WriteLine(twin.Tags.ToJson(Newtonsoft.Json.Formatting.Indented));
 
-            await Task.Delay(1000);
-            twin = await registryManager.UpdateTwinAsync(deviceId, twin, etag: "*");
+            twin = await registryManager.UpdateTwinAsync(deviceId, twin, thermostat.ETag);
             PrintTwin(twin);
+        }
 
-            // change room
-            twin = new Twin(deviceId);
-            twin.Tags["location"] = new TwinCollection();
-            twin.Tags["location"]["room"] = "1S";
+        async Task SetDesiredTemperatureAsync(RegistryManager registryManager, string deviceId, string temperature)
+        {
+            Console.WriteLine($"Get thermostat '{deviceId}' ...");
+            Twin thermostat = await registryManager.GetTwinAsync(deviceId);
+            if (thermostat == null)
+            {
+                Console.WriteLine($"Thermostat {deviceId} not found. Nothing to update.");
+                return;
+            }
 
             Console.WriteLine();
-            Console.WriteLine("Change room from 1R to 1S:");
-            Console.WriteLine(twin.Tags.ToJson(Newtonsoft.Json.Formatting.Indented));
+            Console.WriteLine("Set desired temperature:");
 
-            await Task.Delay(1000);
-            twin = await registryManager.UpdateTwinAsync(deviceId, twin, etag: "*");
+            var twin = new Twin(deviceId);
+            twin.Properties.Desired["temperature"] = temperature;
+
+            Console.WriteLine(twin.Properties.Desired.ToJson(Newtonsoft.Json.Formatting.Indented));
+
+            twin = await registryManager.UpdateTwinAsync(deviceId, twin, thermostat.ETag);
             PrintTwin(twin);
+        }
 
-            // change floor
-            twin = new Twin(deviceId);
-            twin.Tags["location"] = new TwinCollection();
-            twin.Tags["location"]["floor"] = "2";
-            twin.Tags["location"]["room"] = "2S";
+        async Task DeleteThermostatAsync(RegistryManager registryManager, string deviceId)
+        {
+            Console.WriteLine($"Get thermostat '{deviceId}' ...");
+            Twin thermostat = await registryManager.GetTwinAsync(deviceId);
+            if (thermostat == null)
+            {
+                Console.WriteLine($"Thermostat {deviceId} not found. Nothing to delete.");
+                return;
+            }
 
-            Console.WriteLine();
-            Console.WriteLine("Change floor from 1 to 2:");
-            Console.WriteLine(twin.Tags.ToJson(Newtonsoft.Json.Formatting.Indented));
-
-            await Task.Delay(1000);
-            twin = await registryManager.UpdateTwinAsync(deviceId, twin, etag: "*");
-            PrintTwin(twin);
-
-            //// remove device
-            //Console.WriteLine();
-            //Console.WriteLine($"Remove device '{deviceId}' ...");
-            //await Task.Delay(1000);
-            //await registryManager.RemoveDeviceAsync(deviceId);
-            //Console.WriteLine("Device removed");
+            await registryManager.RemoveDeviceAsync(deviceId);
+            Console.WriteLine("Thermostat removed successfully");
         }
 
         static void PrintTwin(Twin twin)

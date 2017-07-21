@@ -9,27 +9,57 @@ namespace ThermostatDevice
     using Microsoft.Azure.Devices.Common.Exceptions;
     using Microsoft.Azure.Devices.Shared;
 
+    using Device = Microsoft.Azure.Devices.Client;
+    using Service = Microsoft.Azure.Devices;
+
     class Program
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Press any key to exit");
+            MainAsync(args).Wait();
+
             Console.WriteLine();
-
-            MainAsync(args);
-
+            Console.WriteLine("Done. Press any key to exit");
             Console.ReadKey();
+        }
+
+        // usage: <deviceId> <temperature>
+        static bool ParseArguments(string[] args, out string deviceId, out string temperature)
+        {
+            deviceId = temperature = null;
+            if (args.Length != 2)
+            {
+                PrintHelp("Wrong number of arguments.");
+                return false;
+            }
+
+            deviceId = args[0];
+            temperature = args[1];
+
+            return true;
+        }
+
+        static void PrintHelp(string message)
+        {
+            Console.WriteLine(message);
+            Console.WriteLine("usage: ThermostatDevice <deviceId> <temperature>");
+            Console.WriteLine();
+            Console.WriteLine("deviceId    - id of a thermostat");
+            Console.WriteLine("temperature - temperature to report");
         }
 
         static async Task MainAsync(string[] args)
         {
+            string deviceId, temperature;
+
+            if (!ParseArguments(args, out deviceId, out temperature))
+            {
+                return;
+            }
+
             try
             {
-                string iotHubConnectionString = ConfigurationManager.AppSettings["IotHubConnectionString"];
-                using (RegistryManager registryManager = RegistryManager.CreateFromConnectionString(iotHubConnectionString))
-                {
-                    await new Program().RunSampleAsync(registryManager);
-                }
+                await new Program().RunSampleAsync(ConfigurationManager.AppSettings["IotHubConnectionString"], deviceId, temperature);
             }
             catch (IotHubException ex)
             {
@@ -41,36 +71,29 @@ namespace ThermostatDevice
             }
         }
 
-        async Task RunSampleAsync(RegistryManager registryManager)
+        async Task RunSampleAsync(string iotHubConnectionString, string deviceId, string temperature)
         {
-            string deviceId = ConfigurationManager.AppSettings["DeviceId"];
-
-            // create a device client to emulated device sending reported properties updates
-            Console.WriteLine("Create device client and connect to IoT Hub ...");
-            Device device = await registryManager.GetDeviceAsync(deviceId);
-            if (device == null)
+            var iotHubConnectionStringBuilder = Service.IotHubConnectionStringBuilder.Create(iotHubConnectionString);
+            using (RegistryManager registryManager = RegistryManager.CreateFromConnectionString(iotHubConnectionString))
             {
-                Console.WriteLine($"Device {deviceId} not registered. Please register the device first.");
-                return;
-            }
+                // create a device client to emulate therostat sending temperature update
+                Console.WriteLine("Create device client and connect to IoT Hub ...");
+                Service.Device device = await registryManager.GetDeviceAsync(deviceId);
+                if (device == null)
+                {
+                    Console.WriteLine($"Thermostat {deviceId} not registered. Please register the thermostat first.");
+                    return;
+                }
 
-            DeviceAuthenticationWithRegistrySymmetricKey authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(
-                    deviceId,
-                    device.Authentication.SymmetricKey.PrimaryKey);
+                var authMethod = new DeviceAuthenticationWithRegistrySymmetricKey(deviceId, device.Authentication.SymmetricKey.PrimaryKey);
+                var connectionStringBuilder = Device.IotHubConnectionStringBuilder.Create(iotHubConnectionStringBuilder.HostName, authMethod);
+                DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionStringBuilder.ToString(), Device.TransportType.Mqtt);
 
-            Microsoft.Azure.Devices.Client.IotHubConnectionStringBuilder connectionStringBuilder = Microsoft.Azure.Devices.Client.IotHubConnectionStringBuilder.Create(
-                "ailn-sample.azure-devices.net",
-                authMethod);
+                await deviceClient.OpenAsync();
+                Console.WriteLine("Thermostat connected");
 
-            DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(connectionStringBuilder.ToString(), Microsoft.Azure.Devices.Client.TransportType.Mqtt);
-            await deviceClient.OpenAsync();
-            Console.WriteLine("Device connected");
-
-            // update reported properties every 2 seconds
-            while (true)
-            {
                 var prop = new TwinCollection();
-                prop["temperature"] = new Random().Next(-100, 100);
+                prop["temperature"] = temperature;
 
                 Console.WriteLine();
                 Console.WriteLine($"Update reported properties:");
@@ -79,8 +102,6 @@ namespace ThermostatDevice
                 await deviceClient.UpdateReportedPropertiesAsync(prop);
 
                 Console.WriteLine("Temperature updated");
-
-                await Task.Delay(2000);
             }
         }
     }

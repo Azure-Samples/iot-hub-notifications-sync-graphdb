@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Configuration;
     using System.Threading.Tasks;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
@@ -21,12 +22,14 @@
         {
             try
             {
-                string graphDbEndpoint = "https://ailn-graph.documents.azure.com:443/";
-                string graphDbAuthKey = "AOxCOJiLCjsCtCTGQ5il4N72dPHVGCVMclOOQj34WkSAkLqvfcnBaOI19Xm66QIbxOwg2cCcwIC2jfKpTa8HEA==";
+                string graphDbEndpoint = ConfigurationManager.AppSettings["GraphDbEndpoint"];
+                string graphDbAuthKey = ConfigurationManager.AppSettings["GraphDbAuthKey"];
+                string databaseName = ConfigurationManager.AppSettings["GraphDbName"];
+                string collectionName = ConfigurationManager.AppSettings["GraphDbCollectionName"];
 
-                string serviceBussConnectionString = "Endpoint=sb://ailn-sample.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=5SJDI1QBXpJUd5C4Z+wJP1Y4eQP7ZDT9vgkRdNnoHT0=";
-                string eventHubName = "ailn-sample-twin-notifications";
-                string storageConnectionString = "DefaultEndpointsProtocol=https;AccountName=ailnsample;AccountKey=8bqrvviAQvXKw2EAMK1DflqhwGSKky+nmNp6gk1Hy5kelRoejKez+NC8GMCF8B8ozoyzw9gZdyTVEJikXzZQpA==;EndpointSuffix=core.windows.net";
+                string serviceBussConnectionString = ConfigurationManager.AppSettings["ServiceBussConnectionString"];
+                string eventHubName = ConfigurationManager.AppSettings["EventHubName"];
+                string storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
 
                 using (var eventProcessorHost = new EventProcessorHost(
                     Guid.NewGuid().ToString("N"),
@@ -41,7 +44,7 @@
                         graphDbAuthKey,
                         new ConnectionPolicy { ConnectionMode = ConnectionMode.Direct, ConnectionProtocol = Protocol.Tcp }))
                     {
-                        await new Program().RunSampleAsync(eventProcessorHost, documentClient);
+                        await new Program().RunSampleAsync(eventProcessorHost, documentClient, databaseName, collectionName);
 
                         Console.WriteLine();
                         Console.WriteLine("*************************************");
@@ -58,11 +61,8 @@
             }
         }
 
-        async Task RunSampleAsync(EventProcessorHost eventProcessorHost, DocumentClient documentClient)
+        async Task RunSampleAsync(EventProcessorHost eventProcessorHost, DocumentClient documentClient, string databaseName, string collectionName)
         {
-            string databaseName = "graphdb";
-            string collectionName = "Devices";
-
             Console.WriteLine($"Create database '{databaseName}' if not exists ...");
             Database database = await documentClient.CreateDatabaseIfNotExistsAsync(new Database { Id = databaseName });
 
