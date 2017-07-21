@@ -3,9 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UpdateTwinApp", "UpdateTwinApp\UpdateTwinApp.csproj", "{ECEF887E-7797-4569-9F0F-87B876495FD4}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncGraphDbApp", "SyncGraphDbApp\SyncGraphDbApp.csproj", "{29B82A43-D781-41CE-9036-92F8B1975323}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThermostatDevice", "ThermostatDevice\ThermostatDevice.csproj", "{A97D8342-BFC8-43A1-8CFC-B646B0DDD494}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThermostatAdmin", "ThermostatAdmin\ThermostatAdmin.csproj", "{ECEF887E-7797-4569-9F0F-87B876495FD4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{074EB009-B7CC-4961-8719-9B40697977D4}"
+	ProjectSection(SolutionItems) = preProject
+		appSettings.config = appSettings.config
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +20,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{29B82A43-D781-41CE-9036-92F8B1975323}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{29B82A43-D781-41CE-9036-92F8B1975323}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29B82A43-D781-41CE-9036-92F8B1975323}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{29B82A43-D781-41CE-9036-92F8B1975323}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A97D8342-BFC8-43A1-8CFC-B646B0DDD494}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A97D8342-BFC8-43A1-8CFC-B646B0DDD494}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A97D8342-BFC8-43A1-8CFC-B646B0DDD494}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A97D8342-BFC8-43A1-8CFC-B646B0DDD494}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECEF887E-7797-4569-9F0F-87B876495FD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

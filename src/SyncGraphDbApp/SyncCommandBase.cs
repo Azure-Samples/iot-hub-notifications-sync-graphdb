@@ -95,7 +95,7 @@
 
         protected Task AddTwinAsync(string hubName, string twinId, JToken jTwin)
         {
-            return new AddTwinSyncCommand(this.DocumentClient, this.GraphCollection, hubName, twinId, jTwin).RunAsync();
+            return new CreateDeviceIdentitySyncCommand(this.DocumentClient, this.GraphCollection, hubName, twinId, jTwin).RunAsync();
         }
 
         protected async Task<Vertex> AddVertexAsync(string label, string id, IDictionary<string, string> properties)

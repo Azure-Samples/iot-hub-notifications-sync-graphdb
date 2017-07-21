@@ -8,13 +8,13 @@
     using Microsoft.Azure.Graphs.Elements;
     using Newtonsoft.Json.Linq;
 
-    class AddTwinSyncCommand : SyncCommandBase
+    class CreateDeviceIdentitySyncCommand : SyncCommandBase
     {
         readonly string hubName;
         readonly string twinId;
         readonly JToken jTwin;
 
-        public AddTwinSyncCommand(
+        public CreateDeviceIdentitySyncCommand(
             DocumentClient documentClient,
             DocumentCollection graphCollection,
             string hubName,

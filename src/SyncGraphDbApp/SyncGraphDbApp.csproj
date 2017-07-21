@@ -173,10 +173,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DeleteTwinSyncCommand.cs" />
+    <Compile Include="DeleteDeviceIdentitySyncCommand.cs" />
     <Compile Include="ReplaceTwinSyncCommand.cs" />
     <Compile Include="UpdateTwinSyncCommand.cs" />
-    <Compile Include="AddTwinSyncCommand.cs" />
+    <Compile Include="CreateDeviceIdentitySyncCommand.cs" />
     <Compile Include="Location.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -186,6 +186,10 @@
     <Compile Include="TwinChangesEventProcessor.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\appSettings.config">
+      <Link>appSettings.config</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>

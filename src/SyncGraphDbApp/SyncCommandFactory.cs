@@ -17,12 +17,12 @@
 
         public SyncCommandBase CreateDeviceIdentitySyncCommand(string hubName, string twinId, JToken jTwin)
         {
-            return new AddTwinSyncCommand(this.documentClient, this.graphCollection, hubName, twinId, jTwin);
+            return new CreateDeviceIdentitySyncCommand(this.documentClient, this.graphCollection, hubName, twinId, jTwin);
         }
 
         public SyncCommandBase DeleteDeviceIdentitySyncCommand(string hubName, string twinId, JToken jTwin)
         {
-            return new DeleteTwinSyncCommand(this.documentClient, this.graphCollection, hubName, twinId, jTwin);
+            return new DeleteDeviceIdentitySyncCommand(this.documentClient, this.graphCollection, hubName, twinId, jTwin);
         }
 
         public SyncCommandBase UpdateTwinSyncCommand(string hubName, string twinId, JToken jTwin)

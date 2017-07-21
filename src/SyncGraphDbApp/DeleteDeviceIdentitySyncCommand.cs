@@ -6,13 +6,13 @@
     using Microsoft.Azure.Documents.Client;
     using Newtonsoft.Json.Linq;
 
-    class DeleteTwinSyncCommand : SyncCommandBase
+    class DeleteDeviceIdentitySyncCommand : SyncCommandBase
     {
         readonly string hubName;
         readonly string twinId;
         readonly JToken jTwin;
 
-        public DeleteTwinSyncCommand(
+        public DeleteDeviceIdentitySyncCommand(
             DocumentClient documentClient,
             DocumentCollection graphCollection,
             string hubName,
