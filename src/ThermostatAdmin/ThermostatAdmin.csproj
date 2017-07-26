@@ -58,19 +58,19 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Azure.Amqp, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Amqp.2.0.4\lib\net45\Microsoft.Azure.Amqp.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Azure.Amqp.2.0.6\lib\net45\Microsoft.Azure.Amqp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Azure.Devices, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Devices.1.2.8\lib\net451\Microsoft.Azure.Devices.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Devices, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Devices.1.2.10\lib\net451\Microsoft.Azure.Devices.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Azure.Devices.Client, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Azure.Devices.Client.1.2.13\lib\net45\Microsoft.Azure.Devices.Client.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Azure.Devices.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Devices.Shared.1.0.11\lib\net45\Microsoft.Azure.Devices.Shared.dll</HintPath>
+    <Reference Include="Microsoft.Azure.Devices.Shared, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.Devices.Shared.1.0.12\lib\net45\Microsoft.Azure.Devices.Shared.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -238,6 +238,7 @@
     <None Include="..\appSettings.config">
       <Link>appSettings.config</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </None>
     <None Include="App.config" />
     <None Include="packages.config" />
