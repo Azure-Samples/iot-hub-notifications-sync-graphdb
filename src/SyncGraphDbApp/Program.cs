@@ -4,24 +4,29 @@
     using System.Collections.Generic;
     using System.Configuration;
     using System.Threading.Tasks;
+    using Microsoft.Azure.Devices;
+    using Microsoft.Azure.Devices.Shared;
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using Microsoft.Azure.Documents.Linq;
     using Microsoft.Azure.Graphs;
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     class Program
     {
         static void Main(string[] args)
         {
-            MainAsync().Wait();
+            MainAsync(args).Wait();
         }
 
-        static async Task MainAsync()
+        static async Task MainAsync(string[] args)
         {
             try
             {
+                string iotHubConnectionString = ConfigurationManager.AppSettings["IotHubConnectionString"];
+
                 string graphDbEndpoint = ConfigurationManager.AppSettings["GraphDbEndpoint"];
                 string graphDbAuthKey = ConfigurationManager.AppSettings["GraphDbAuthKey"];
                 string databaseName = ConfigurationManager.AppSettings["GraphDbName"];
@@ -31,27 +36,60 @@
                 string eventHubName = ConfigurationManager.AppSettings["EventHubName"];
                 string storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
 
-                using (var eventProcessorHost = new EventProcessorHost(
-                    Guid.NewGuid().ToString("N"),
-                    eventHubName,
-                    EventHubConsumerGroup.DefaultGroupName,
-                    serviceBussConnectionString,
-                    storageConnectionString))
-                {
-
-                    using (var documentClient = new DocumentClient(
+                using (var documentClient = new DocumentClient(
                         new Uri(graphDbEndpoint),
                         graphDbAuthKey,
                         new ConnectionPolicy { ConnectionMode = ConnectionMode.Direct, ConnectionProtocol = Protocol.Tcp }))
+                {
+                    string action;
+                    if (!ParseArguments(args, out action))
                     {
-                        await new Program().RunSampleAsync(eventProcessorHost, documentClient, databaseName, collectionName);
+                        return;
+                    }
 
+                    Console.WriteLine($"Create database '{databaseName}' if not exists ...");
+                    Database database = await documentClient.CreateDatabaseIfNotExistsAsync(new Database { Id = databaseName });
+
+                    Console.WriteLine($"Create document collection '{collectionName}' if not exists ...");
+                    DocumentCollection graph = await documentClient.CreateDocumentCollectionIfNotExistsAsync(
+                        UriFactory.CreateDatabaseUri(databaseName),
+                        new DocumentCollection { Id = collectionName },
+                        new RequestOptions { OfferThroughput = 1000 });
+
+                    // create topology graph
+                    await CreateTopologyGraphAsync(documentClient, graph);
+
+                    if (action == "notifications")
+                    {
+                        Console.WriteLine("Sync graph using notifications ...");
                         Console.WriteLine();
-                        Console.WriteLine("*************************************");
-                        Console.WriteLine("* Press any key to exit at any time *");
-                        Console.WriteLine("*************************************");
+
+                        using (var eventProcessorHost = new EventProcessorHost(
+                            Guid.NewGuid().ToString("N"),
+                            eventHubName,
+                            EventHubConsumerGroup.DefaultGroupName,
+                            serviceBussConnectionString,
+                            storageConnectionString))
+                        {
+                            await new Program().RunNotificationsSampleAsync(eventProcessorHost, documentClient, graph);
+
+                            WaitAnyKeyPressedToExit();
+                        }
+                    }
+                    else if (action == "sync")
+                    {
+                        Console.WriteLine("Query all devices from IotHub and sync to graph db ...");
                         Console.WriteLine();
-                        Console.ReadKey();
+
+                        IotHubConnectionStringBuilder csb = IotHubConnectionStringBuilder.Create(iotHubConnectionString);
+                        string iotHubName = csb.HostName.Substring(0, csb.HostName.IndexOf(".azure-devices.net"));
+
+                        using (var registryManager = RegistryManager.CreateFromConnectionString(iotHubConnectionString))
+                        {
+                            await new Program().RunSyncSampleAsync(iotHubName, registryManager, documentClient, graph);
+
+                            WaitAnyKeyPressedToExit();
+                        }
                     }
                 }
             }
@@ -61,26 +99,78 @@
             }
         }
 
-        async Task RunSampleAsync(EventProcessorHost eventProcessorHost, DocumentClient documentClient, string databaseName, string collectionName)
+        static void WaitAnyKeyPressedToExit()
         {
-            Console.WriteLine($"Create database '{databaseName}' if not exists ...");
-            Database database = await documentClient.CreateDatabaseIfNotExistsAsync(new Database { Id = databaseName });
+            Console.WriteLine();
+            Console.WriteLine("*************************************");
+            Console.WriteLine("* Press any key to exit at any time *");
+            Console.WriteLine("*************************************");
+            Console.WriteLine();
+            Console.ReadKey();
+        }
 
-            Console.WriteLine($"Create document collection '{collectionName}' if not exists ...");
-            DocumentCollection graph = await documentClient.CreateDocumentCollectionIfNotExistsAsync(
-                UriFactory.CreateDatabaseUri(databaseName),
-                new DocumentCollection { Id = collectionName },
-                new RequestOptions { OfferThroughput = 1000 });
+        // usage: <deviceId> <temperature>
+        static bool ParseArguments(string[] args, out string action)
+        {
+            action = null;
+            if (args.Length > 1)
+            {
+                PrintHelp("Wrong number of arguments.");
+                return false;
+            }
 
-            // create topology graph
-            await this.CreateTopologyGraphAsync(documentClient, graph);
+            action = "notifications";
+            if (args.Length == 1)
+            {
+                action = args[0];
+            }
 
+            switch (action)
+            {
+                case "sync":
+                case "notifications":
+                    return true;
+                default:
+                    PrintHelp($"Unrecognized action '{action}'.");
+                    return false;
+            }
+        }
+
+        static void PrintHelp(string message)
+        {
+            Console.WriteLine(message);
+            Console.WriteLine("usage: SyncGraphDbApp [notifications]  - will consume twin notifications to sync changes to graph db");
+            Console.WriteLine("       SyncGraphDbApp sync             - will query all the devices and create or update corresponding entities in graph db");
+        }
+
+        async Task RunNotificationsSampleAsync(EventProcessorHost eventProcessorHost, DocumentClient documentClient, DocumentCollection graph)
+        {
             var eventProcessorOptions = new EventProcessorOptions();
             var eventProcessorFactory = new TwinChangeEventProcessorFactory(documentClient, graph);
             await eventProcessorHost.RegisterEventProcessorFactoryAsync(eventProcessorFactory, eventProcessorOptions);
         }
 
-        async Task CreateTopologyGraphAsync(DocumentClient documentClient, DocumentCollection graph)
+        async Task RunSyncSampleAsync(string iotHubName, RegistryManager registryManager, DocumentClient documentClient, DocumentCollection graph)
+        {
+            int pageSize = 100;
+            IQuery query = registryManager.CreateQuery("select * from devices", pageSize);
+            while (query.HasMoreResults)
+            {
+                IEnumerable<Twin> twins = await query.GetNextAsTwinAsync();
+                foreach (Twin twin in twins)
+                {
+                    Console.WriteLine("----------------------------------------");
+                    Console.WriteLine($"Synchronize thermostat {twin.DeviceId}:");
+
+                    string jTwin = twin.ToJson();
+                    await new CreateOrUpdateTwinSyncCommand(documentClient, graph, iotHubName, twin.DeviceId, JToken.Parse(jTwin)).RunAsync();
+
+                    Console.WriteLine();
+                }
+            }
+        }
+
+        static async Task CreateTopologyGraphAsync(DocumentClient documentClient, DocumentCollection graph)
         {
             Console.WriteLine();
             Console.WriteLine("======== Create topology graph if not exists ... ========");
@@ -132,7 +222,7 @@
                     }
                 }
 
-                Console.WriteLine("===================== Grap created. =====================");
+                Console.WriteLine("===================== Graph created. =====================");
             }
         }
     }

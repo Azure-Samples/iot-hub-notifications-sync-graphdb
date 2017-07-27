@@ -31,32 +31,26 @@
         {
             string graphTwinId = MapGraphTwinId(this.hubName, this.twinId);
             Vertex vTwin = null;
-            do
+            Dictionary<string, string> properties = new Dictionary<string, string>
             {
-                try
-                {
-                    Console.WriteLine("Add new thermostat vertex ...");
-                    vTwin = await this.AddVertexAsync("thermostat", graphTwinId, null);
-                }
-                catch (DocumentClientException ex) when (ex.Error.Code == "Conflict")
-                {
-                    Console.WriteLine($"Thermostat vertex {graphTwinId} already exists in the graph. Get the vertex ...");
-                    vTwin = await this.GetVertexByIdAsync(graphTwinId);
-                }
-            } while (vTwin == null);
+                { "version", ((long)this.jTwin["version"]).ToString() }
+            };
 
-            // update temperature
-            Dictionary<string, string> properties = null;
             string reportedTemperature = this.ParseReportedTemperature(this.jTwin);
             if (!string.IsNullOrWhiteSpace(reportedTemperature))
             {
-                properties = new Dictionary<string, string>
-                {
-                    { "temperature", reportedTemperature }
-                };
+                properties.Add("temperature", reportedTemperature);
+            }
 
-                Console.WriteLine("Update vertex temperature property ...");
-                vTwin = await this.UpdateVertexAsync(graphTwinId, properties);
+            try
+            {
+                Console.WriteLine("Add new thermostat vertex ...");
+                vTwin = await this.AddVertexAsync("thermostat", graphTwinId, null);
+            }
+            catch (DocumentClientException ex) when (ex.Error.Code == "Conflict")
+            {
+                Console.WriteLine($"Thermostat vertex {graphTwinId} already exists in the graph.");
+                return;
             }
 
             // replace location
