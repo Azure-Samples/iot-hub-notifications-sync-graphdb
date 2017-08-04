@@ -178,7 +178,7 @@
             JValue jTemperature = jTwin.SelectToken(temperaturePath) as JValue;
             if (jTemperature != null)
             {
-                if (jTemperature.Type != JTokenType.Integer && jTemperature.Type != JTokenType.Float)
+                if (jTemperature.Type != JTokenType.Integer && jTemperature.Type != JTokenType.Float && jTemperature.Type != JTokenType.String)
                 {
                     Console.WriteLine($"WARNING! Invalid temperature format. Path: {temperaturePath}");
                 }

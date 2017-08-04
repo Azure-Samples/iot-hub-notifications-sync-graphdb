@@ -32,7 +32,7 @@
                 string databaseName = ConfigurationManager.AppSettings["GraphDbName"];
                 string collectionName = ConfigurationManager.AppSettings["GraphDbCollectionName"];
 
-                string serviceBussConnectionString = ConfigurationManager.AppSettings["ServiceBussConnectionString"];
+                string serviceBusConnectionString = ConfigurationManager.AppSettings["ServiceBusConnectionString"];
                 string eventHubName = ConfigurationManager.AppSettings["EventHubName"];
                 string storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"];
 
@@ -68,7 +68,7 @@
                             Guid.NewGuid().ToString("N"),
                             eventHubName,
                             EventHubConsumerGroup.DefaultGroupName,
-                            serviceBussConnectionString,
+                            serviceBusConnectionString,
                             storageConnectionString))
                         {
                             await new Program().RunNotificationsSampleAsync(eventProcessorHost, documentClient, graph);
