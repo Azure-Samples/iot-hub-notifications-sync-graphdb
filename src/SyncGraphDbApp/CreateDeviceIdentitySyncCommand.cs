@@ -45,7 +45,7 @@
             try
             {
                 Console.WriteLine("Add new thermostat vertex ...");
-                vTwin = await this.AddVertexAsync("thermostat", graphTwinId, null);
+                vTwin = await this.AddVertexAsync("thermostat", graphTwinId, properties);
             }
             catch (DocumentClientException ex) when (ex.Error.Code == "Conflict")
             {
