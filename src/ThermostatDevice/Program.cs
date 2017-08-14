@@ -92,14 +92,14 @@ namespace ThermostatDevice
                 await deviceClient.OpenAsync();
                 Console.WriteLine("Thermostat connected");
 
-                var prop = new TwinCollection();
-                prop["temperature"] = temperature;
+                var props = new TwinCollection();
+                props["temperature"] = temperature;
 
                 Console.WriteLine();
                 Console.WriteLine($"Update reported properties:");
-                Console.WriteLine(prop.ToJson(Newtonsoft.Json.Formatting.Indented));
+                Console.WriteLine(props.ToJson(Newtonsoft.Json.Formatting.Indented));
 
-                await deviceClient.UpdateReportedPropertiesAsync(prop);
+                await deviceClient.UpdateReportedPropertiesAsync(props);
 
                 Console.WriteLine("Temperature updated");
             }
