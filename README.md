@@ -1,7 +1,11 @@
 ---
-services: iot-hub
-platforms: csharp, dotnet
-author: ailn
+page_type: sample
+languages:
+- csharp
+products:
+- azure
+description: "Use device lifecycle and twins changes to replicate device data to an external store"
+urlFragment: iot-hub-notifications-sync-graphdb
 ---
 
 # Use device lifecycle and twins changes to replicate device data to an external store
