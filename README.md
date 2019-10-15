@@ -16,11 +16,13 @@ This sample demonstrates the use of IoT Hub device lifecycle and twin change not
 
 In the solution, SyncGraphDbApp simulates a cloud service that leverages Azure IoT Hub notifications to replicate thermostat data to a Cosmos DB graph. SyncGraphDbApp uses device lifecycle notifications to create Thermostat vertices in the Cosmos DB Graph for each newly provisioned thermostat whenever a new Thermostat is registered via ThermostatAdmin. As ThermostatDevice publishes the thermostat's current temperature SyncGraphDbApp updates the Temperature field of the Thermostat vertex.
 
-##	Download sample
+## Download sample
+
 1.	Clone https://github.com/Azure-Samples/iot-hub-notifications-sync-graphdb
 1.	Open iot-hub-notifications-sync-graphdb\src\SyncGraphDbFromTwin.sln in Visual Studio 2015 or later
 
-##	Provision Azure resources
+## Provision Azure resources
+
 The sample depends on the following Azure resources:
 - SyncGraphDBEventHub - The Azure Event Hub that queues device lifecycle and twin change notifications where they are processed by SyncGraphDBApp. The Event Hub is created within the SyncGraphDBNamespace namespace.
 - SyncGraphDBIoTHub -  The Azure IoT Hub that maintains the sample's device registry and device twins
@@ -88,6 +90,7 @@ The following steps provision these resources using the Azure portal:
         - Click Save
 
 ## Start processing notifications
+
 SyncGraphDbApp handles the processing of device lifecycle and twin change notifications. Internally its TwinChangesEventProcessor class reads notifications routed to a SyncGraphDBEventHub and updates the graph accordingly. The processor is implemented as a typical Azure Event Hub event processor meaning it has a corresponding factory class (```TwinChangesEventProcessorFactory```), implements ```IEventProcessor``` and is triggered by a EventProcessorHost. For more information on Azure Event Hub event processors see [Event Hubs programming guide](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-programming-guide).
 
 ```TwinChangesEventProcessor.ProcessEventAsync``` is called when a new batch of notifications arrive. ProcessEventAsync calls SyncDataAsync to process the batch and updates the event hub checkpoint based on the last successfully processed notification. The checkpoint allows SyncGraphDbApp to restart and resume processing without dropping any notifications.
@@ -201,7 +204,7 @@ Finally the ThermostatDevice sample reports the current temperature of a room. W
 1. In Results column select syncgraphdbiothub-Thermo1234. 
 1. Note that temperature is now 85
 
-# Tips & Tricks
+## Tips & Tricks
 - SyncGraphDbApp is a single instance console application that demonstrates how to consume IoT Hub notifications and update an external store. In order to make the solution scale it needs to be hosted in an Azure Worker Role which scales to multiple instances and listens on a partitioned Event Hub. IoT Hub notifications use the notification's device ID as the Event Hub partition key. As a result device lifecycle and twin change notifications are routed to a partition based on the notification's device ID. Read more on [Event Hubs features](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-features).
 - When processing twinChangeEvents notifications both replaceTwin and updateTwin opTypes must be processed to ensure the latest changes are synced
 - In the sample the IoT Hub routes are created when the IoT Hub is created. As a result the target Event Hub contains all the device lifecycle and twin change events from the start of the hub's lifetime. This ensures SyncGraphDBApp receives all the events needed to completely sync the graph DB. However if the SyncGraphDBApp needs to sync a hub that was previous created or if SyncGraphDBApp became unavailable for a period of time longer than the Event Hub's retention policy, SyncGraphDBApp would need a way to catch up. Such a catch up procedure would work as follows:
@@ -221,7 +224,7 @@ Finally the ThermostatDevice sample reports the current temperature of a room. W
 }
 ```
 
-# Contributing
+## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
@@ -231,7 +234,6 @@ When you submit a pull request, a CLA-bot will automatically determine whether y
 a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
 provided by the bot. You will only need to do this once across all repos using our CLA.
 
----
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
